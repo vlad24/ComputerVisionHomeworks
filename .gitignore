@@ -1,0 +1,5 @@
+.meatadata
+.settings
+*.pyc
+*.project
+*.pydevproject
