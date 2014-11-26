@@ -11,19 +11,29 @@ from OpenGL.raw.GLUT.constants import GLUT_RGB, GLUT_SINGLE, GLUT_DEPTH
 
 #Global constants
 distance = 3.0
-focus = 6.0
+focuses = (4.5, 6.0, 7.5)
 windows_width = 250
 windows_height = 250
-windows_x = 0
-windows_y = 0
 
-def draw_cube_function():
+
+def draw_cube_function_0():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    draw_my_cube()
+    draw_my_cube(focuses[1])
 
-def draw_my_cube():
+def draw_cube_function_1():
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    draw_my_cube(focuses[0])
+
+def draw_cube_function_2():
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    draw_my_cube(focuses[1])
+    
+def draw_cube_function_3():
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    draw_my_cube(focuses[2])
+    
+def draw_my_cube(focus):
     global distance
-    global focus
     glLoadIdentity()
     #Shift the system
     shift_abs = distance + focus
@@ -68,14 +78,13 @@ def draw_my_cube():
     #glVertex3f(-2, 2, 4) #G
     glEnd()
 
-def initialize_mode(command):
+def initialize_mode(command, focus):
     global distance
-    global focus
     near = focus
     far = 2 * (near + distance)
     x_min = -5
     x_max = 5
-    y_min = -6
+    y_min = -5
     y_max = 5
     glClearColor(0.4, 0.4, 0.4, 0.1)
     glMatrixMode(GL_PROJECTION)
@@ -89,21 +98,26 @@ def initialize_mode(command):
 def main():
     global windows_height
     global windows_width
-    global windows_x
-    global windows_y
+    windows_x = -windows_width
+    windows_y = 0
+    windows_x_shift = windows_width + 50
+    global focuses
     glutInit() # init the GLUT-machine
     glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH) #RGB scheme, with one buffer, with depth buffer
     #Preparing thr window for orth projection
     glutInitWindowSize(windows_width, windows_height)
     glutInitWindowPosition(windows_x, windows_y)
     glutCreateWindow("Orthographic Projection")
-    glutDisplayFunc(draw_cube_function)
-    initialize_mode("orthographic")
-    glutInitWindowSize(windows_width, windows_height)
-    glutInitWindowPosition(windows_x + windows_width, windows_y + windows_height)
-    glutCreateWindow("Perspective Projection")
-    glutDisplayFunc(draw_cube_function)
-    initialize_mode("perspective")
+    glutDisplayFunc(draw_cube_function_0)
+    initialize_mode("orthographic", focuses[1])
+    funcs_for_perspective_drawing = [draw_cube_function_1, draw_cube_function_2, draw_cube_function_3]
+    for i in range(len(funcs_for_perspective_drawing)):
+        windows_x += windows_x_shift
+        glutInitWindowSize(windows_width, windows_height)
+        glutInitWindowPosition(windows_x + windows_width, windows_y)
+        glutCreateWindow("Persp Proj. Focus = "+str(focuses[i]))
+        glutDisplayFunc(funcs_for_perspective_drawing[i])
+        initialize_mode("perspective", focuses[i])
     glutMainLoop()
 
 if __name__ == '__main__':
