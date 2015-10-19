@@ -11,7 +11,7 @@ from OpenGL.raw.GLUT.constants import GLUT_RGB, GLUT_SINGLE, GLUT_DEPTH
 
 #Global constants
 distance = 3.0
-focuses = (4.5, 6.0, 7.5)
+focuses = (4.5, 8.0, 7.5)
 windows_width = 250
 windows_height = 250
 

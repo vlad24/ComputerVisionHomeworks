@@ -41,7 +41,7 @@ if __name__ == '__main__':
             keypoints_rotated_good.append(keypoints_rotated[match_object.trainIdx])
     image_original_with_good_points = cv2.drawKeypoints(image_original, keypoints_original_good)
     image_rotated_with_good_points = cv2.drawKeypoints(image_rotated, keypoints_rotated_good)
-    print 'Part of well detected points is = ', (float(len(keypoints_original_good)) / len(keypoints_original) * 100), "%"
+    print 'Part of well detected points is ', (float(len(keypoints_original_good)) / len(keypoints_original) * 100), "%"
     plt.subplot(321),plt.imshow(image_original, cmap = 'gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
     plt.subplot(322),plt.imshow(image_rotated, cmap = 'gray')
