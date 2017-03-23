@@ -54,6 +54,6 @@ equalization_image = equalization(image)
 hist(equalization_image)
 lequalization_image = local_equalization(image, 71, 71)
 hist(lequalization_image)
-cv2.imwrite("../img/P/slon_LEqualization.jpg", lequalization_image)
+cv2.imwrite("../img/V/slon_LEqualization.jpg", lequalization_image)
 print "Done"
 
