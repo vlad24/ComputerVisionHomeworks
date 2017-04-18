@@ -7,6 +7,7 @@ Created on Apr 14, 2017
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+from numpy import dtype
 
 k = 5
 
@@ -20,18 +21,24 @@ def fourier_transform(img):
 def fourier_transform_inverse(fourier_transform):
     return np.abs(np.fft.ifft2(np.fft.ifftshift(fourier_transform)))
 
-def zerofy(fourier_transform, y_offset, x_offset):
-    high_pass_img = np.copy(fourier_transform)
-    row_c, col_c = (high_pass_img.shape[0] / 2, high_pass_img.shape[1] / 2) 
+def zerofy(f, y_offset, x_offset):
+    r = np.copy(f)
+    row_c, col_c = (r.shape[0] / 2, r.shape[1] / 2) 
     if (x_offset == 0 and y_offset == 0):
-        high_pass_img[row_c, col_c] = 0
+        r[row_c, col_c] = 0
     else:
-        high_pass_img[row_c - y_offset : row_c + y_offset + 1, col_c - x_offset : col_c + x_offset + 1] = 0
-    return high_pass_img
+        r[row_c - y_offset : row_c + y_offset + 1, col_c - x_offset : col_c + x_offset + 1] = 0
+    return r
+
+def zerofy_inv(f, y_offset, x_offset):
+    r = np.zeros_like(f)
+    row_c, col_c = (r.shape[0] / 2, r.shape[1] / 2) 
+    r[row_c - y_offset : row_c + y_offset + 1, col_c - x_offset : col_c + x_offset + 1] = f[row_c - y_offset : row_c + y_offset + 1, col_c - x_offset : col_c + x_offset + 1]
+    return r
     
 
-def to_magnitude_spectrum(fourier_transform):
-    return 20 * np.log(np.abs(fourier_transform))
+def to_magnitude_spectrum(t):
+    return np.log(1+np.abs(t))
 
 def plot_part(part, name, img):
     plt.subplot(part)
@@ -40,30 +47,42 @@ def plot_part(part, name, img):
     plt.xticks([]); plt.yticks([])
 
 if __name__ == '__main__':
+    r = 25
     img1 = cv2.imread(test_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
-    ft = fourier_transform(img1)
-    hp = zerofy(ft, 30, 30)
+    img3 = cv2.imread(test_img_path.format(task=k-1), cv2.IMREAD_GRAYSCALE)
+    ft1 = fourier_transform(img1)
+    ft3 = fourier_transform(img3)
+    hp1 = zerofy(ft1, r, r)
+    hp3 = zerofy_inv(ft3, r/2, r/2)
+    pr1 = zerofy(ft1, 0, 0)
+    pr3 = zerofy(ft3, 0, 0)
+    
     plot_part(221, "Original",             img1)
-    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft))
-    plot_part(223, "High Pass Image",      fourier_transform_inverse(hp))
-    plot_part(224, "HP Fourier Transform", to_magnitude_spectrum(hp))
+    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft1))
+    plot_part(223, "High Pass Image",      fourier_transform_inverse(hp1))
+    plot_part(224, "HP Fourier Transform", to_magnitude_spectrum(hp1))
     plt.show()
-    
-    img2 = cv2.imread(test_img_path.format(task=k-1), cv2.IMREAD_GRAYSCALE)
-    ft = fourier_transform(img2)
-    hp = zerofy(ft, 30, 30)
-    plot_part(221, "Original",             img2)
-    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft))
-    plot_part(223, "High Pass Image",      fourier_transform_inverse(hp))
-    plot_part(224, "HP Fourier Transform", to_magnitude_spectrum(hp))
-    plt.show()
-    
-    img3 = cv2.imread(test_img_path.format(task=k-3), cv2.IMREAD_GRAYSCALE)
+     
     ft = fourier_transform(img3)
-    hp = zerofy(ft, 0, 0)
+    hp = zerofy_inv(ft, r/2, r/2)
     plot_part(221, "Original",             img3)
-    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft))
-    plot_part(223, "High Pass Image",      fourier_transform_inverse(hp))
-    plot_part(224, "HP Fourier Transform", to_magnitude_spectrum(hp))
+    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft3))
+    plot_part(223, "Result Image",      fourier_transform_inverse(hp3))
+    plot_part(224, "Res Fourier Transform", to_magnitude_spectrum(hp3))
     plt.show()
+    
+    plot_part(221, "Original",             img1)
+    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft1))
+    plot_part(223, "Pr Image",             fourier_transform_inverse(pr1))
+    plot_part(224, "Res Fourier Transform", to_magnitude_spectrum(pr1))
+    plt.show()
+     
+    plot_part(221, "Original",             img3)
+    plot_part(222, "Fourier Transform",    to_magnitude_spectrum(ft3))
+    plot_part(223, "Result Image",         fourier_transform_inverse(pr3))
+    plot_part(224, "Res Fourier Transform", to_magnitude_spectrum(pr3))
+    plt.show()
+    
+    
+    
 
