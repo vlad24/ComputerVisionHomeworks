@@ -106,7 +106,6 @@ def to_magnitude_spectrum(t):
     return np.abs(t)
 
 
-
 def laplacian_enhancement(img, A=1):
     return A * img - cv2.Laplacian(img, cv2.CV_64F) 
 
@@ -121,20 +120,22 @@ def plot_part(rs, cs, num, name, img):
     plt.xticks([]); plt.yticks([])
 
 
-def safe_to_uint8(img):
+def normalize(img, max_constant=255):
     minimum = np.amin(img)
     maximum = np.amax(img)
-    result = 255 * (img - minimum) / maximum 
+    result = max_constant * (img - minimum) / (maximum - minimum) 
     return result
 
 if __name__ == '__main__':
-    ideal_demo_needed     = False
-    btw_demo_needed       = False
-    gauss_demo_needed     = False
+    ideal_demo_needed     = not True
+    btw_demo_needed       = not True
+    gauss_demo_needed     = not True
     laplacian_demo_needed = True
     ####################################################################################
-    img = cv2.imread(test_img_path.format(task=k - 1), cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(test_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+    img2 = cv2.imread(test_img_path.format(task=k-1), cv2.IMREAD_GRAYSCALE)
     ft = fourier_transform(img)
+    ft2 = fourier_transform(img2)
     ###################################IDEAL##############################################
     if ideal_demo_needed:
         rows = 3
@@ -184,7 +185,7 @@ if __name__ == '__main__':
         plot_part(rows, cols, 6,  "BTW LP Mask D={} n={}".format(D1, 2 * n2), btw_mask_D1_n2)
         plot_part(rows, cols, 7,  "BTW LP Img  D={} n={}".format(D2, 2 * n1), fourier_transform_inverse(btw_ft_D2_n1))
         plot_part(rows, cols, 8,  "BTW LP FT   D={} n={}".format(D2, 2 * n1), safe_log(to_magnitude_spectrum(btw_ft_D2_n1)))
-        plot_part(rows, cols, 9,  "BTW LP Mask D={} n={}".format(D2, 2 * n1), btw_mask_D1_n1)
+        plot_part(rows, cols, 9,  "BTW LP Mask D={} n={}".format(D2, 2 * n1), btw_mask_D2_n1)
         plot_part(rows, cols, 10, "BTW LP Img  D={} n={}".format(D3, 2 * n1), fourier_transform_inverse(btw_ft_D3_n1))
         plot_part(rows, cols, 11, "BTW LP FT   D={} n={}".format(D3, 2 * n1), safe_log(to_magnitude_spectrum(btw_ft_D3_n1)))
         plot_part(rows, cols, 12, "BTW LP Mask D={} n={}".format(D3, 2 * n1), btw_mask_D3_n1)
@@ -233,19 +234,15 @@ if __name__ == '__main__':
     ######################################LAPLACIAN############################################
     if laplacian_demo_needed:
         rows = 2
-        cols = 2
-        laplacian_freq_mask = get_mask_4laplacian_freq(ft.shape)
-        laplaced_ft         = multiply_images(ft, laplacian_freq_mask)
+        cols = 3
+        laplacian_freq_mask = get_mask_4laplacian_freq(ft2.shape)
+        laplaced_ft         = multiply_images(ft2, laplacian_freq_mask)
         laplacian_result    = fourier_transform_inverse(laplaced_ft)
-        print laplacian_result.dtype
-        print img.dtype
-        
-        print img
-        print safe_to_uint8(img)
-        plot_part(rows, cols, 1, "ORIGINAL",         img)
-        plot_part(rows, cols, 2, "LAPLACIAN",        laplacian_result)
-        plot_part(rows, cols, 3, "IMG - LAPLACIAN",  img - safe_to_uint8(laplacian_result))
-        plot_part(rows, cols, 4, "LAPLACED FT ",     safe_log(to_magnitude_spectrum(laplaced_ft)))
+        plot_part(rows, cols, 1, "ORIGINAL",         img2)
+        plot_part(rows, cols, 4, "FT",               safe_log(to_magnitude_spectrum(ft2)))
+        plot_part(rows, cols, 2, "LAPLACIAN",        normalize(laplacian_result))
+        plot_part(rows, cols, 5, "LAPLACED FT ",     safe_log(to_magnitude_spectrum(laplaced_ft)))
+        plot_part(rows, cols, 3, "COMBO",            img2 - normalize(laplacian_result))
         plt.show()
         
     
