@@ -127,9 +127,9 @@ def normalize(img, max_constant=255):
     return result
 
 if __name__ == '__main__':
-    ideal_demo_needed     = not True
-    btw_demo_needed       = not True
-    gauss_demo_needed     = not True
+    ideal_demo_needed     = True
+    btw_demo_needed       = True
+    gauss_demo_needed     = True
     laplacian_demo_needed = True
     ####################################################################################
     img = cv2.imread(test_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
