@@ -11,8 +11,10 @@ np.set_printoptions(threshold=np.nan,linewidth=np.nan)
 
 k = 7
 
-test_img_path = "../img/V/{task}/test{task}.png"
-new_img_path = "../img/V/{task}/_{name}.jpg"
+test_img1_path =  "../img/V/{task}/test{task}.jpg"
+test_img2_path = "../img/V/{task}/test{task}.png"
+speed_img_path = "../img/V/{task}/speed{task}.jpg"
+new_img_path =   "../img/V/{task}/_{name}.jpg"
 
 
 def fourier_transform(img):
@@ -67,7 +69,7 @@ def homomorphic_transform(img, g1, g2, D, c):
     loged_ft_filtered = multiply_images(loged_ft, h)
     loged_filtered    = fourier_transform_inverse(loged_ft_filtered)
     exped             = normalize(np.exp(loged_filtered))
-    return (exped, h, loged, loged_filtered)
+    return (exped, h)
 
 def equalization(img):
     hist = np.zeros(256, dtype=np.float64)
@@ -83,29 +85,39 @@ def equalization(img):
             result[i][j] = sum(hist[0:T])
     return np.uint8(result * 255)
 
+
 if __name__ == '__main__':
+    method_demo_needed  = not True
+    speed_test_needed   = True
     g1 = 0.5
     g2 = 2.0
     D  = 256
     c  = 1.0
-    ####
-    img = cv2.imread(test_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
-    ft  = fourier_transform(img)
-    ht, mask, l, ll = homomorphic_transform(img, g1, g2, D, c)
-    ####
-    rows = 3
-    cols = 3
-    plot_part(rows, cols, 1, "Original",                 img)
-    plot_part(rows, cols, 3, "Fourier transform",        safe_log(to_magnitude_spectrum(ft)))
-    plot_part(rows, cols, 4, "Homomorphic transform",    equalization(normalize(ht)))
-    plot_part(rows, cols, 5, "H(u,v)",                   mask, 0, g2)
-    plot_part(rows, cols, 6, "Homomorphic transform FT", safe_log(to_magnitude_spectrum(fourier_transform(ht))))
-    plot_part(rows, cols, 7, "Loged",                    l, 0, 10)
-    plot_part(rows, cols, 9, "Loged filtered",           ll,0, 10)
-    plt.show()
-        
-    
-    
-    
-        
-    
+    if method_demo_needed:
+        ####
+        img1 = cv2.imread(test_img1_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+        img2 = cv2.imread(test_img2_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+        ft1  = fourier_transform(img1)
+        ft2  = fourier_transform(img2)
+        ht1, mask = homomorphic_transform(img1, g1, g2, D, c)
+        ht2, _    = homomorphic_transform(img2, g1, g2, D, c)
+        eq1 = equalization(normalize(ht1))
+        eq2 = equalization(normalize(ht2))
+        ####
+        rows = 3
+        cols = 3
+        plot_part(rows, cols, 1, "Original 1",              img1)
+        plot_part(rows, cols, 4, "Fourier transform 1",     safe_log(to_magnitude_spectrum(ft1)))
+        plot_part(rows, cols, 7, "Homomorphic transform 1", eq1)
+        plot_part(rows, cols, 5, "H(u,v)",                  mask)
+        plot_part(rows, cols, 3, "Original 2",              img2)
+        plot_part(rows, cols, 6, "Fourier transform 2",     safe_log(to_magnitude_spectrum(ft2)))
+        plot_part(rows, cols, 9, "Homomorphic transform 2", eq2)
+        plt.show()
+            
+    if speed_test_needed:
+        img1 = cv2.imread(test_img1_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+        img2 = cv2.imread(speed_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+        ht1 = homomorphic_transform(img1, g1, g2, D, c)        
+        ht2 = homomorphic_transform(img2, g1, g2, D, c)        
+        #Measure time
