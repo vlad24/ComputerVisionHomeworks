@@ -61,14 +61,27 @@ def log_img(img):
     return np.log(img.clip(min=1E-5))
 
 def homomorphic_transform(img, g1, g2, D, c):
-    h = get_homomorphic_mask(img.shape, g1, g2, D, c)
+    h                 = get_homomorphic_mask(img.shape, g1, g2, D, c)
     loged             = log_img(img)
     loged_ft          = fourier_transform(loged)
     loged_ft_filtered = multiply_images(loged_ft, h)
     loged_filtered    = fourier_transform_inverse(loged_ft_filtered)
     exped             = normalize(np.exp(loged_filtered))
     return (exped, h, loged, loged_filtered)
-    
+
+def equalization(img):
+    hist = np.zeros(256, dtype=np.float64)
+    result = np.zeros(img.shape, dtype=np.float64)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            T = int(img[i][j])
+            hist[T] += 1
+    hist = hist / (img.shape[0] * img.shape[1])
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            T = int(img[i][j])
+            result[i][j] = sum(hist[0:T])
+    return np.uint8(result * 255)
 
 if __name__ == '__main__':
     g1 = 0.5
@@ -84,7 +97,7 @@ if __name__ == '__main__':
     cols = 3
     plot_part(rows, cols, 1, "Original",                 img)
     plot_part(rows, cols, 3, "Fourier transform",        safe_log(to_magnitude_spectrum(ft)))
-    plot_part(rows, cols, 4, "Homomorphic transform",    normalize(ht))
+    plot_part(rows, cols, 4, "Homomorphic transform",    equalization(normalize(ht)))
     plot_part(rows, cols, 5, "H(u,v)",                   mask, 0, g2)
     plot_part(rows, cols, 6, "Homomorphic transform FT", safe_log(to_magnitude_spectrum(fourier_transform(ht))))
     plot_part(rows, cols, 7, "Loged",                    l, 0, 10)
