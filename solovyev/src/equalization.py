@@ -32,9 +32,9 @@ def local_equalization(img, P, L):
         for j in range(W):
             local_hist = np.zeros(255)
             for k in range(i - L/2, i + L/2 + 1):
-                for l in range(j - P/2, j + P/2 + 1):
-                    if (0 <= k < H and 0 <= l < W):
-                        T = img[k][l]
+                for loged in range(j - P/2, j + P/2 + 1):
+                    if (0 <= k < H and 0 <= loged < W):
+                        T = img[k][loged]
                         local_hist[T] += 1
             local_hist = local_hist / (P * L)
             T = img[i][j]

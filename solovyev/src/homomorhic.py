@@ -7,22 +7,22 @@ Created on Apr 16, 2017
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
+import time
+
 np.set_printoptions(threshold=np.nan,linewidth=np.nan)
 
 k = 7
 
-test_img1_path =  "../img/V/{task}/test{task}.jpg"
-test_img2_path = "../img/V/{task}/test{task}.png"
-speed_img_path = "../img/V/{task}/speed{task}.jpg"
 new_img_path =   "../img/V/{task}/_{name}.jpg"
 
+test_img1_path =  "../img/V/{task}/test{task}.jpg"
+test_img2_path = "../img/V/{task}/test{task}.png"
 
-def fourier_transform(img):
-    return np.fft.fftshift(np.fft.fft2(img))
+speed_img0_path = test_img1_path
+speed_img1_path = "../img/V/{task}/speed_1_{task}.jpg"
+speed_img2_path = "../img/V/{task}/speed_2_{task}.jpg"
+speed_img3_path = "../img/V/{task}/speed_3_{task}.jpg"
 
-
-def fourier_transform_inverse(fourier_transform):
-    return np.abs(np.fft.ifft2(np.fft.ifftshift(fourier_transform)))
 
 
 def to_magnitude_spectrum(t):
@@ -33,12 +33,20 @@ def safe_log(t):
     return np.log(1 + np.abs(t))
 
 
+
 def normalize(img, max_constant=255, min_constant=0):
     minimum = np.amin(img)
     maximum = np.amax(img)
     result = max_constant * ((img - minimum) / (maximum - minimum) + min_constant)
     return result
 
+def fourier_transform_inverse(fourier_transform):
+    #old
+    return np.abs(np.fft.ifft2(np.fft.ifftshift(fourier_transform)))
+
+def fourier_transform(img):
+    #old
+    return np.fft.fftshift(np.fft.fft2(img))
 
 def multiply_images(image, mask):
     return image * mask
@@ -88,7 +96,7 @@ def equalization(img):
 
 if __name__ == '__main__':
     method_demo_needed  = not True
-    speed_test_needed   = True
+    speed_test_needed   =  True
     g1 = 0.5
     g2 = 2.0
     D  = 256
@@ -116,8 +124,15 @@ if __name__ == '__main__':
         plt.show()
             
     if speed_test_needed:
-        img1 = cv2.imread(test_img1_path.format(task=k), cv2.IMREAD_GRAYSCALE)
-        img2 = cv2.imread(speed_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
-        ht1 = homomorphic_transform(img1, g1, g2, D, c)        
-        ht2 = homomorphic_transform(img2, g1, g2, D, c)        
-        #Measure time
+        #Dependent on library version and image
+        orig_img = cv2.imread(speed_img3_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+        cx = orig_img.shape[0] // 2
+        cy = orig_img.shape[1] // 2
+        p = 0
+        offs = [2**x for x in range(2, 9)]
+        for off in offs:
+            img = orig_img[cx - off : cx + off, cy - off : cy + off]
+            t_beg = time.clock()
+            ht = homomorphic_transform(img, g1, g2, D, c)
+            t_end = time.clock()
+            print 4 * off**2,"\t", t_end - t_beg

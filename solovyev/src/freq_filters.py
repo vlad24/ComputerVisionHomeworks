@@ -7,19 +7,41 @@ Created on Apr 14, 2017
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
+import math
+import cmath
 
 k = 6
 
-test_img_path = "../img/V/{task}/test{task}.jpg"
+test_img1_path = "../img/V/{task}/test{task}.jpg"
 new_img_path = "../img/V/{task}/_{name}.jpg"
 
 
-def fourier_transform(img):
-    return np.fft.fftshift(np.fft.fft2(img))
+def compute_dft(inputt):
+    n = len(inputt)
+    output = [complex(0)] * n
+    for k in range(n):
+        s = complex(0)
+        for t in range(n):
+            s += input[t] * cmath.exp(-2j * cmath.pi * t * k / n)
+        output[k] = s
+    return output
 
+def fourier_tranform(inreal, inimag):
+    assert len(inreal) == len(inimag)
+    n = len(inreal)
+    outreal = [0.0] * n
+    outimag = [0.0] * n
+    for k in range(n): 
+        sumreal = 0.0
+        sumimag = 0.0
+        for u in range(n):
+            angle = 2 * math.pi * u * k / n
+            sumreal +=  inreal[u] * math.cos(angle) + inimag[u] * math.sin(angle)
+            sumimag += -inreal[u] * math.sin(angle) + inimag[u] * math.cos(angle)
+        outreal[k] = sumreal
+        outimag[k] = sumimag
+    return (outreal, outimag)
 
-def fourier_transform_inverse(fourier_transform):
-    return np.abs(np.fft.ifft2(np.fft.ifftshift(fourier_transform)))
 
 
 def circular_centered_mask(shape, radius):
@@ -39,9 +61,9 @@ def circular_centered_mask(shape, radius):
     return res
 
 
-def get_mask_4ideal(ft, percentage=50, is_high_pass=False):
-    n = min(ft.shape[0], ft.shape[1])
-    mag = to_magnitude_spectrum(ft)
+def get_mask_4ideal(ft1, percentage=50, is_high_pass=False):
+    n = min(ft1.shape[0], ft1.shape[1])
+    mag = to_magnitude_spectrum(ft1)
     total_sum = sum(sum(mag))
     mask = None
     rl = 1
@@ -49,7 +71,7 @@ def get_mask_4ideal(ft, percentage=50, is_high_pass=False):
     r = (rl + rr) // 2
     ratio = 0
     while (rl < rr):
-        mask = circular_centered_mask(ft.shape, r)
+        mask = circular_centered_mask(ft1.shape, r)
         current_sum = np.sum(mask * mag)
         ratio = 100.0 * current_sum / total_sum
         if (ratio > percentage):
@@ -61,10 +83,20 @@ def get_mask_4ideal(ft, percentage=50, is_high_pass=False):
         r = (rl + rr) // 2
     # print r,ratio
     result = circular_centered_mask(img.shape, r - 1)
+    print r
     if is_high_pass:
         result = 1 - result
     return result
 
+
+def fourier_transform(img):
+    #old
+    return np.fft.fftshift(np.fft.fft2(img))
+
+
+def fourier_transform_inverse(fourier_transform):
+    #old
+    return np.abs(np.fft.ifft2(np.fft.ifftshift(fourier_transform)))
 
 def get_mask_4butterwort(shape, D, n, is_high_pass=False):
     x, y = np.ogrid[ : shape[0], : shape[1]]
@@ -113,10 +145,10 @@ def safe_log(t):
     return np.log(1 + np.abs(t))
 
 
-def plot_part(rs, cs, num, name, img):
+def plot_part(rs, cs, num, name, img, vmin=None, vmax=None):
     plt.subplot(rs, cs, num)
     plt.title(name)
-    plt.imshow(img, cmap='gray')
+    plt.imshow(img, cmap='gray',  vmin=vmin, vmax=vmax)
     plt.xticks([]); plt.yticks([])
 
 
@@ -128,13 +160,13 @@ def normalize(img, max_constant=255):
 
 if __name__ == '__main__':
     ideal_demo_needed     = True
-    btw_demo_needed       = True
+    btw_demo_needed       = not True
     gauss_demo_needed     = True
-    laplacian_demo_needed = True
+    laplacian_demo_needed = not True
     ####################################################################################
-    img = cv2.imread(test_img_path.format(task=k), cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread(test_img_path.format(task=k-1), cv2.IMREAD_GRAYSCALE)
-    ft = fourier_transform(img)
+    img = cv2.imread(test_img1_path.format(task=k), cv2.IMREAD_GRAYSCALE)
+    img2 = cv2.imread(test_img1_path.format(task=k-1), cv2.IMREAD_GRAYSCALE)
+    ft1 = fourier_transform(img)
     ft2 = fourier_transform(img2)
     ###################################IDEAL##############################################
     if ideal_demo_needed:
@@ -143,12 +175,12 @@ if __name__ == '__main__':
         percentage1 = 80
         percentage2 = 30
         percentage3 = 10
-        idealf_mask_p1 = get_mask_4ideal(ft, percentage=percentage1)
-        idealf_mask_p2 = get_mask_4ideal(ft, percentage=percentage2)
-        idealf_mask_p3 = get_mask_4ideal(ft, percentage=percentage3)
-        idealf_ft_p1   = multiply_images(ft, idealf_mask_p1)
-        idealf_ft_p2   = multiply_images(ft, idealf_mask_p2)
-        idealf_ft_p3   = multiply_images(ft, idealf_mask_p3)
+        idealf_mask_p1 = get_mask_4ideal(ft1, percentage=percentage1)
+        idealf_mask_p2 = get_mask_4ideal(ft1, percentage=percentage2)
+        idealf_mask_p3 = get_mask_4ideal(ft1, percentage=percentage3)
+        idealf_ft_p1   = multiply_images(ft1, idealf_mask_p1)
+        idealf_ft_p2   = multiply_images(ft1, idealf_mask_p2)
+        idealf_ft_p3   = multiply_images(ft1, idealf_mask_p3)
         plot_part(rows, cols, 1, "IDEAL LP Img  per={}%".format(percentage1), fourier_transform_inverse(idealf_ft_p1))
         plot_part(rows, cols, 2, "IDEAL LP FT   per={}%".format(percentage1), safe_log(idealf_ft_p1))
         plot_part(rows, cols, 3, "IDEAL LP Mask per={}%".format(percentage1), idealf_mask_p1)
@@ -169,14 +201,14 @@ if __name__ == '__main__':
         D3 = 80
         n1 = 1 
         n2 = 3
-        btw_mask_D1_n1 = get_mask_4butterwort(ft.shape, D=D1, n=n1)
-        btw_mask_D1_n2 = get_mask_4butterwort(ft.shape, D=D2, n=n2)
-        btw_mask_D2_n1 = get_mask_4butterwort(ft.shape, D=D2, n=n1)
-        btw_mask_D3_n1 = get_mask_4butterwort(ft.shape, D=D3, n=n1)
-        btw_ft_D1_n1   = multiply_images(ft, btw_mask_D1_n1)
-        btw_ft_D1_n2   = multiply_images(ft, btw_mask_D1_n2)
-        btw_ft_D2_n1   = multiply_images(ft, btw_mask_D2_n1)
-        btw_ft_D3_n1   = multiply_images(ft, btw_mask_D3_n1)
+        btw_mask_D1_n1 = get_mask_4butterwort(ft1.shape, D=D1, n=n1)
+        btw_mask_D1_n2 = get_mask_4butterwort(ft1.shape, D=D2, n=n2)
+        btw_mask_D2_n1 = get_mask_4butterwort(ft1.shape, D=D2, n=n1)
+        btw_mask_D3_n1 = get_mask_4butterwort(ft1.shape, D=D3, n=n1)
+        btw_ft_D1_n1   = multiply_images(ft1, btw_mask_D1_n1)
+        btw_ft_D1_n2   = multiply_images(ft1, btw_mask_D1_n2)
+        btw_ft_D2_n1   = multiply_images(ft1, btw_mask_D2_n1)
+        btw_ft_D3_n1   = multiply_images(ft1, btw_mask_D3_n1)
         plot_part(rows, cols, 1,  "BTW LP Img  D={} n={}".format(D1, 2 * n1), fourier_transform_inverse(btw_ft_D1_n1))
         plot_part(rows, cols, 2,  "BTW LP FT   D={} n={}".format(D1, 2 * n1), safe_log(to_magnitude_spectrum(btw_ft_D1_n1)))
         plot_part(rows, cols, 3,  "BTW LP Mask D={} n={}".format(D1, 2 * n1), btw_mask_D1_n1)
@@ -198,12 +230,12 @@ if __name__ == '__main__':
         D1 = 15
         D2 = 30
         D3 = 80
-        gauss_mask_D1 = get_mask_4gauss(ft.shape, D=D1)
-        gauss_mask_D2 = get_mask_4gauss(ft.shape, D=D2)
-        gauss_mask_D3 = get_mask_4gauss(ft.shape, D=D3)
-        gauss_ft_D1 = multiply_images(ft, gauss_mask_D1)
-        gauss_ft_D2 = multiply_images(ft, gauss_mask_D2)
-        gauss_ft_D3 = multiply_images(ft, gauss_mask_D3)
+        gauss_mask_D1 = get_mask_4gauss(ft1.shape, D=D1)
+        gauss_mask_D2 = get_mask_4gauss(ft1.shape, D=D2)
+        gauss_mask_D3 = get_mask_4gauss(ft1.shape, D=D3)
+        gauss_ft_D1 = multiply_images(ft1, gauss_mask_D1)
+        gauss_ft_D2 = multiply_images(ft1, gauss_mask_D2)
+        gauss_ft_D3 = multiply_images(ft1, gauss_mask_D3)
         plot_part(rows, cols, 1, "GAUSS LP Img  D={}".format(D1), fourier_transform_inverse(gauss_ft_D1))
         plot_part(rows, cols, 2, "GAUSS LP FT   D={}".format(D1), safe_log(to_magnitude_spectrum(gauss_ft_D1)))
         plot_part(rows, cols, 3, "GAUSS LP Mask D={}".format(D1), gauss_mask_D1)
@@ -218,9 +250,9 @@ if __name__ == '__main__':
         gauss_mask_hp_D1 = 1 - gauss_mask_D1
         gauss_mask_hp_D2 = 1 - gauss_mask_D2
         gauss_mask_hp_D3 = 1 - gauss_mask_D3
-        gauss_ft_hp_D1   = multiply_images(ft, gauss_mask_hp_D1)
-        gauss_ft_hp_D2   = multiply_images(ft, gauss_mask_hp_D2)
-        gauss_ft_hp_D3   = multiply_images(ft, gauss_mask_hp_D3)
+        gauss_ft_hp_D1   = multiply_images(ft1, gauss_mask_hp_D1)
+        gauss_ft_hp_D2   = multiply_images(ft1, gauss_mask_hp_D2)
+        gauss_ft_hp_D3   = multiply_images(ft1, gauss_mask_hp_D3)
         plot_part(rows, cols, 1, "GAUSS HP Img  D={}".format(D1), fourier_transform_inverse(gauss_ft_hp_D1))
         plot_part(rows, cols, 2, "GAUSS HP FT   D={}".format(D1), safe_log(to_magnitude_spectrum(gauss_ft_hp_D1)))
         plot_part(rows, cols, 3, "GAUSS HP Mask D={}".format(D1), gauss_mask_hp_D1)
